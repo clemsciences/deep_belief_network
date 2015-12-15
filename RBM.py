@@ -1,5 +1,6 @@
 # -*- coding: Utf-8 -*-
 import numpy as np
+import skimage.io as ima
 __author__ = "Clément"
 
 
@@ -64,11 +65,14 @@ class RBM:
                 self.b += epsilon*db
     def generer_image_RBM(self, nombre_iterations_Gibbs, nombre_image):
         h = np.random.uniform(0, 1, (1, self.taille_sortie))
-        for _ in range(nombre_iterations_Gibbs):
-            echantillon_h = np.where(np.random.uniform(0, 1 , (1, self.taille_sortie)) < h, 0, 1 )
-            v = self.sortie_entree_RBM(echantillon_h)
-            echantillon_v = np.where(np.random.uniform(0, 1 , (1, self.taille_entree)) < v, 0, 1 )
-            h = self.entree_sortie_RBM(echantillon_v)
+        liste_image = []
+        for _ in range(nombre_image):
+            for _ in range(nombre_iterations_Gibbs):
+                echantillon_h = np.where(np.random.uniform(0, 1 , (1, self.taille_sortie)) < h, 0, 1 )
+                v = self.sortie_entree_RBM(echantillon_h)
+                echantillon_v = np.where(np.random.uniform(0, 1 , (1, self.taille_entree)) < v, 0, 1 )
+                h = self.entree_sortie_RBM(echantillon_v)
+            liste_image.append(echantillon_v)
         return echantillon_v
 
 
@@ -113,7 +117,10 @@ class DBN:
             tirage = np.where( np.random.uniform(0, 1 ,proba.shape) < proba, 0, 1)
         return tirage
 
-
+def creer_image(matrice):
+    ima.imshow(matrice)
+    ima.show()
+	
 
 
 
@@ -122,7 +129,9 @@ def lire_alpha_digit(nom_fichier):
 
 if __name__ == "__main__":
     nom_fichier = "donnees.txt"
-    donnees = lire_alpha_digit(nom_fichier)
+    indice = 12
+    nombre = 39
+    donnees = lire_alpha_digit(nom_fichier)[indice*nombre:(indice+1)*nombre,:]
     print donnees
     print donnees.shape
     nombre_iteration_descente = 500
@@ -130,8 +139,12 @@ if __name__ == "__main__":
     taille_mini_batch = 13
     nombre_iterations_Gibbs = 500
     nombre_image = 1
-    reseau = DBN([int(donnees.shape[1]), 40, 10, 5, 3])
+    reseau = DBN([int(donnees.shape[1]), 200, 10, 5, 3])
     reseau.train_DBN(nombre_iteration_descente=nombre_iteration_descente, epsilon=epsilon,\
                      taille_mini_batch=taille_mini_batch, donnees=donnees)
     #reseau.generer_image_DBN(nombre_iterations_Gibbs=nombre_iterations_Gibbs, nombre_image=nombre_image)
-    print reseau.couches[0].generer_image_RBM(nombre_iterations_Gibbs, 1)
+    for im in reseau.couches[0].generer_image_RBM(nombre_iterations_Gibbs, 5):
+        creer_image(im.reshape((20,16)))
+
+
+
