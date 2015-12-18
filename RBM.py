@@ -1,5 +1,6 @@
 # -*- coding: Utf-8 -*-
 import numpy as np
+#import skimage.io as ima
 import skimage.io as ima
 import scipy.io as scio
 __author__ = "Clément"
@@ -13,10 +14,10 @@ class RBM:
         self.taille_sortie = taille_sortie
         self.W = np.random.uniform(-1, 1, (taille_entree, taille_sortie))
         #self.W = np.ones((taille_entree, taille_sortie))
-        #self.a = np.random.uniform(-1, 1, (1, taille_entree))
-        self.a = np.zeros((1, taille_entree))
-        #self.b = np.random.uniform(-1, 1, (1, taille_sortie))
-        self.b = np.zeros((1, taille_sortie))
+        self.a = np.random.uniform(-1, 1, (1, taille_entree))
+        #self.a = np.ones((1, taille_entree))
+        self.b = np.random.uniform(-1, 1, (1, taille_sortie))
+        #self.b = np.ones((1, taille_sortie))
 
     def entree_sortie_RBM(self, entrees):
         #print "b shape",  self.b.shape
@@ -71,7 +72,7 @@ class RBM:
             Vr = self.sortie_entree_RBM(H)
             #print np.sum((V-Vr)**2)
     def generer_image_RBM(self, nombre_iterations_Gibbs, nombre_image):
-        
+        h = np.random.uniform(0, 1, (1, self.taille_sortie))
         liste_image = []
         for _ in range(nombre_image):
             v = np.random.uniform(0, 1, (1, self.taille_entree))
@@ -81,10 +82,10 @@ class RBM:
                 h = self.entree_sortie_RBM(echantillon_v)
                 echantillon_h = (np.random.uniform(0, 1, (1, self.taille_sortie)) < h).astype("int")
                 #np.where(np.random.uniform(0, 1 , (1, self.taille_sortie))  h, 0, 1 )
-		#print "erreur : "+str(np.sum(echantillon_v - donnees))
+		        #print "erreur : "+str(np.sum(echantillon_v - donnees))
                 v = self.sortie_entree_RBM(echantillon_h)
             liste_image.append(echantillon_v)
-        return echantillon_v
+        return liste_image
 
 
 
@@ -109,15 +110,18 @@ class DBN:
             self.couches.append(RBM(self.nombre_neurones_couches[i], self.nombre_neurones_couches[i+1]))
         #print self.couches
     def entree_sortie_reseau(self, donnees):
+        l = []
         res = donnees
         for couche in self.couches[:len(self.couches)-1]:
             res = couche.entree_sortie_RBM(res)
-        return self.couches[len(self.couches) - 1].calcul_softmax(res)
+            l.append(res)
+        l.append(self.couches[len(self.couches) - 1].calcul_softmax(res))
+        return l
     def train_DBN(self, nombre_iteration_descente, epsilon, taille_mini_batch, donnees):
         res = donnees
         print "train DBN"
         #print len(self.couches)
-        
+
         for i in range(len(self.couches)-1):
             print i
             self.couches[i].train_RBM(nombre_iteration_descente, epsilon, taille_mini_batch, res)
@@ -132,11 +136,45 @@ class DBN:
             #tirage = np.where( np.random.uniform(0, 1 ,proba.shape) < proba, 1, 0)
             tirage = (np.random.uniform(0, 1, proba.shape) < proba).astype("int")
         return tirage
-  
+    def retropropagation(self, nb_iteration, epsilon, taille_mini_batch, donnees, labels):
+        for _ in range(nb_iteration):
+            for batch in range(int(np.shape(donnees)[0])/taille_mini_batch - 1):
+                entrees = donnees[batch*taille_mini_batch:(batch+1)*(taille_mini_batch),:]
+                l_Y = self.entree_sortie_reseau(donnees)
 
-def creer_image(matrice):
-    ima.imshow(matrice)
-    ima.show()
+                # Different types of output neurons
+                # if self.outtype == 'linear':
+                #     deltao = (self.outputs-labels)/self.ndata
+                # elif self.outtype == 'logistic':
+                #     deltao = self.beta*(self.outputs-labels)*self.outputs*(1.0-self.outputs)
+                # elif self.outtype == 'softmax':
+                #     deltao = (self.outputs-labels)*(self.outputs*(-self.outputs)+self.outputs)/self.ndata
+                # else:
+                #     print "error"
+
+
+                for i in range(len(self.couches)):
+                    indice_couche = len(self.couches) - 1 - i
+                    Y = l_Y[indice_couche]
+                    if indice_couche > 0:
+                        X = l_Y[indice_couche - 1]
+                    else:
+                        X = donnees
+                    if indice_couche == len(self.couches) - 1:
+                        delta = (Y-labels)
+                        delta_W = np.dot(delta, X)/taille_mini_batch
+                    else:
+                        delta = np.multiply(np.dot(delta_W, self.couches[indice_couche].W.T),np.multiply(X,(np.ones(np.shape(X)-X))))
+                        delta_W = np.dot(delta, X)/taille_mini_batch
+                    delta_b = delta
+                    self.couches[indice_couche].W -= epsilon * delta_W
+                    self.couches[indice_couche].b -= epsilon * delta_b
+
+
+
+# def creer_image(matrice):
+#     ima.imshow(matrice)
+#     ima.show()
 	
 
 def lire_alpha_digit_mat(nom_fichier):
@@ -154,7 +192,7 @@ if __name__ == "__main__":
     nom_fichier_mat = "donnees.mat"
     donnees = lire_alpha_digit_mat(nom_fichier_mat)[indice*nombre:(indice+1)*nombre,:]
     #donnees.reshape((39, 20*16))
-    #creer_image(donnees[1,:].reshape((16,20)).T) #c'est bien comme ça qu'il faut afficher les images 
+    #creer_image(donnees[1,:].reshape((16,20)).T) #c'est bien comme ça qu'il faut afficher les images
     #print donnees
     print donnees.shape
     nombre_iteration_descente = 1500
