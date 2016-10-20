@@ -159,16 +159,16 @@ class DBN:
         return l
     def train_DBN(self, nombre_iteration_descente, epsilon, taille_mini_batch, donnees):
         res = donnees
-        print "train DBN"
+        print("train DBN")
         #print len(self.couches)
 
         for i in range(len(self.couches)-1):
-            print i
+            print(i)
             self.couches[i].train_RBM(nombre_iteration_descente, epsilon, taille_mini_batch, res)
             res = self.couches[i].entree_sortie_RBM(res)
             #print self.couches[i].W
     def generer_image_DBN(self, nombre_iterations_Gibbs, nombre_image):
-	print len(self.couches)-2
+        print(len(self.couches)-2)
         tirage = self.couches[len(self.couches)-2].generer_image_RBM(nombre_iterations_Gibbs, nombre_image)
         tirage = tirage[0]
         for i in range(1,len(self.couches)-1):
@@ -178,11 +178,12 @@ class DBN:
             tirage = (np.random.uniform(0, 1, proba.shape) < proba).astype("int")
         return tirage
     def retropropagation(self, nb_iteration, epsilon, taille_mini_batch, donnees, labels):
-        print "début rétropropagation"
-	print "labels", labels.shape, "donnees", donnees.shape
+        print("début rétropropagation")
+        print("labels", labels.shape, "donnees", donnees.shape)
         for _ in range(nb_iteration):
             np.random.shuffle(donnees)
-            for batch in range(int(np.shape(donnees)[0])/taille_mini_batch - 1):
+            print(np.shape(donnees))
+            for batch in range(int(int(np.shape(donnees)[0])/taille_mini_batch) - 1):
                 #print a, k, int(np.shape(donnees)[0])/taille_mini_batch - 1
                 entrees = donnees[batch*taille_mini_batch:(batch+1)*(taille_mini_batch),:]
                 labels_batch = labels[batch*taille_mini_batch:(batch+1)*(taille_mini_batch),:]
@@ -222,19 +223,19 @@ class DBN:
             #print labels[:5,:]
             #print out[derniere_couche]
             diff = labels - out[derniere_couche]
-            print np.sum(diff*diff, axis=1).shape
-            print np.sum(diff*diff, axis=1)[0]
-            print "erreur",np.sqrt(np.sum(np.sum(diff*diff, axis=1), axis=0)/diff.shape[0])
+            print(np.sum(diff*diff, axis=1).shape)
+            print(np.sum(diff*diff, axis=1)[0])
+            print("erreur",np.sqrt(np.sum(np.sum(diff*diff, axis=1), axis=0)/diff.shape[0]))
             #print "diff", diff.shape, diff
             #print "taille erreur", diff.shape, labels.shape, np.argmax(out[-1], axis=1).shape
             #print "erreur", np.dot(diff.T, diff)#/diff.shape[1]
     def test_DNN(self, donnees, labels):
-        print "donnees shape", donnees.shape
+        print("donnees shape", donnees.shape)
         estimation = self.entree_sortie_reseau(donnees)
         derniere_couche = self.nombre_couches - 2
         diff = labels - estimation[derniere_couche]
-        print np.sum(diff*diff, axis=1).shape
-        print "erreur", np.sqrt(np.sum(np.sum(diff*diff, axis=1), axis=0)/diff.shape[0])
+        print(np.sum(diff*diff, axis=1).shape)
+        print("erreur", np.sqrt(np.sum(np.sum(diff*diff, axis=1), axis=0)/diff.shape[0]))
 
 
 
@@ -271,9 +272,9 @@ if __name__ == "__main__":
         donnees.reshape((39, 20*16))
         #creer_image(donnees[1,:].reshape((16,20)).T) #c'est bien comme ça qu'il faut afficher les images
         #print donnees
-        print donnees.shape
+        print(donnees.shape)
     
-        reseau = DBN([int(donnees.shape[1]), 20, 20])#, 300, 300, 300])
+        reseau = DBN([int(donnees.shape[1]), 20, 20])  #, 300, 300, 300])
 	
         """
         reseau.train_DBN(nombre_iteration_descente=nombre_iteration_descente, epsilon=epsilon,\
@@ -288,11 +289,11 @@ if __name__ == "__main__":
         labels, donnees = read(1, "training")
         donnees = donnees.reshape((60000,28*28))
         labels = labels.reshape((60000,1))
-        print "labels : ", labels.shape, "données : ", donnees.shape
+        print("labels : ", labels.shape, "données : ", donnees.shape)
         #labels = labels[indice]
         #print labels[:10]
         #donnees = donnees[indice*nombre:(indice+1)*nombre,:]
-        print "retropropagation"
+        print("retropropagation")
         reseau = DBN([int(donnees.shape[1]), 20,20,10])
         reseau.retropropagation(nombre_iteration_descente, epsilon, taille_mini_batch, donnees, labels)
         labels, donnees = read(1, "testing")

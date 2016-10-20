@@ -1,7 +1,7 @@
 import os, struct
 import numpy as np
 
-def read(digits, dataset = "training", path = "."):
+def read(digits, dataset = "training", path = ""):
     """
     Python function for importing the MNIST data set.
     """
@@ -13,7 +13,7 @@ def read(digits, dataset = "training", path = "."):
         fname_img = os.path.join(path, 't10k-images-idx3-ubyte')
         fname_lbl = os.path.join(path, 't10k-labels-idx1-ubyte')
     else:
-        raise ValueError, "dataset must be 'testing' or 'training'"
+        raise ValueError #, "dataset must be 'testing' or 'training'"
     # Load everything in some numpy arrays
     with open(fname_lbl, 'rb') as flbl:
         magic, num = struct.unpack(">II", flbl.read(8))
